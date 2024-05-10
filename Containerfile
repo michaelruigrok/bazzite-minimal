@@ -1,4 +1,4 @@
-ARG BASE_IMAGE_NAME="${BASE_IMAGE_NAME:-kinoite}"
+ARG BASE_IMAGE_NAME="${BASE_IMAGE_NAME:-base}"
 ARG BASE_IMAGE_FLAVOR="${BASE_IMAGE_FLAVOR:-main}"
 ARG IMAGE_FLAVOR="${IMAGE_FLAVOR:-main}"
 ARG KERNEL_FLAVOR="${KERNEL_FLAVOR:-fsync}"
@@ -14,7 +14,7 @@ ARG IMAGE_VENDOR="${IMAGE_VENDOR:-ublue-os}"
 ARG IMAGE_FLAVOR="${IMAGE_FLAVOR:-main}"
 ARG KERNEL_FLAVOR="${KERNEL_FLAVOR:-fsync}"
 ARG IMAGE_BRANCH="${IMAGE_BRANCH:-main}"
-ARG BASE_IMAGE_NAME="${BASE_IMAGE_NAME:-kinoite}"
+ARG BASE_IMAGE_NAME="${BASE_IMAGE_NAME:-base}"
 ARG FEDORA_MAJOR_VERSION="${FEDORA_MAJOR_VERSION:-40}"
 
 COPY system_files/desktop/shared system_files/desktop/${BASE_IMAGE_NAME} /
@@ -271,37 +271,23 @@ RUN rpm-ostree override remove \
         ublue-os-update-services \
         firefox \
         firefox-langpacks \
-        htop && \
+        && \
     ostree container commit
 
 # Install new packages
 RUN rpm-ostree install \
         discover-overlay \
-        python3-pip \
-        libadwaita \
         duperemove \
-        sqlite \
-        xwininfo \
-        xrandr \
-        compsize \
         input-remapper \
         system76-scheduler \
         powertop \
-        i2c-tools \
         udica \
         joycond \
-        ladspa-caps-plugins \
-        ladspa-noise-suppression-for-voice \
-        python3-icoextract \
-        tailscale \
-        webapp-manager \
         btop \
-        fish \
         lshw \
         xdotool \
         wmctrl \
         libcec \
-        yad \
         f3 \
         pulseaudio-utils \
         unrar \
@@ -309,19 +295,10 @@ RUN rpm-ostree install \
         libxcrypt-compat \
         mesa-libGLU \
         vulkan-tools \
-        glibc.i686 \
         extest.i686 \
         xwiimote-ng \
-        twitter-twemoji-fonts \
-        google-noto-sans-cjk-fonts \
-        lato-fonts \
-        fira-code-fonts \
-        nerd-fonts \
         fastfetch \
-        glow \
-        gum \
         vim \
-        zoxide \
         setools \
         setroubleshoot \
         cockpit-networkmanager \
@@ -330,13 +307,12 @@ RUN rpm-ostree install \
         cockpit-system \
         cockpit-navigator \
         cockpit-storaged \
-        lsb_release && \
-    pip install --prefix=/usr topgrade && \
+        lsb_release \
+		&& \
     rpm-ostree install \
         ublue-update && \
     mkdir -p /usr/etc/xdg/autostart && \
     echo "X-GNOME-Autostart-enabled=false" >> /usr/etc/xdg/autostart/sealertauto.desktop && \
-    sed -i '1s/^/[include]\npaths = ["\/etc\/ublue-os\/topgrade.toml"]\n\n/' /usr/share/ublue-update/topgrade-user.toml && \
     sed -i 's/min_battery_percent.*/min_battery_percent = 20.0/' /usr/etc/ublue-update/ublue-update.toml && \
     sed -i 's/max_cpu_load_percent.*/max_cpu_load_percent = 100.0/' /usr/etc/ublue-update/ublue-update.toml && \
     sed -i 's/max_mem_percent.*/max_mem_percent = 90.0/' /usr/etc/ublue-update/ublue-update.toml && \
@@ -351,32 +327,12 @@ RUN rpm-ostree install \
 # Install Steam & Lutris, plus supporting packages
 # Remove Feral gamemode, System76 Scheduler supersedes this
 RUN rpm-ostree install \
-        jupiter-sd-mounting-btrfs \
-        at-spi2-core.i686 \
-        atk.i686 \
         vulkan-loader.i686 \
-        alsa-lib.i686 \
-        fontconfig.i686 \
-        gtk2.i686 \
-        libICE.i686 \
-        libnsl.i686 \
-        libxcrypt-compat.i686 \
-        libpng12.i686 \
-        libXext.i686 \
-        libXinerama.i686 \
-        libXtst.i686 \
-        libXScrnSaver.i686 \
         NetworkManager-libnm.i686 \
-        nss.i686 \
-        pulseaudio-libs.i686 \
         libcurl.i686 \
-        systemd-libs.i686 \
-        libva.i686 \
-        libvdpau.i686 \
-        libdbusmenu-gtk3.i686 \
         libatomic.i686 \
         pipewire-alsa.i686 \
-        clinfo && \
+        && \
     sed -i '0,/enabled=1/s//enabled=0/' /etc/yum.repos.d/fedora-updates.repo && \
     rpm-ostree install \
         mesa-vulkan-drivers.i686 \
@@ -394,129 +350,26 @@ RUN rpm-ostree install \
     sed -i '0,/enabled=0/s//enabled=1/' /etc/yum.repos.d/rpmfusion-nonfree-updates-testing.repo && \
     sed -i '0,/enabled=0/s//enabled=1/' /etc/yum.repos.d/fedora-updates.repo && \
     rpm-ostree install \
-        lutris \
-        fluidsynth \
-        fluid-soundfont-gm \
-        qsynth \
-        wxGTK \
-        libFAudio \
-        wine-core.x86_64 \
-        wine-core.i686 \
-        wine-pulseaudio.x86_64 \
-        wine-pulseaudio.i686 \
-        winetricks \
         protontricks \
         latencyflex-vulkan-layer \
         vkBasalt.x86_64 \
         vkBasalt.i686 \
-        mangohud.x86_64 \
-        mangohud.i686 \
         vk_hdr_layer.x86_64 \
         vk_hdr_layer.i686 && \
-    if grep -q "kinoite" <<< "${BASE_IMAGE_NAME}"; then \
-        rpm-ostree override remove \
-            gamemode \
-    ; else \
-        rpm-ostree override remove \
-            gamemode && \
-        rpm-ostree override remove \
-            gnome-shell-extension-gamemode \
-            || true \
-    ; fi && \
-    sed -i 's@\[Desktop Entry\]@\[Desktop Entry\]\nNoDisplay=true@g' /usr/share/applications/winetricks.desktop && \
+	rpm-ostree override remove \
+		gamemode && \
+	rpm-ostree override remove \
+		gnome-shell-extension-gamemode \
+		|| true \
     curl -Lo /tmp/latencyflex.tar.xz $(curl https://api.github.com/repos/ishitatsuyuki/LatencyFleX/releases/latest | jq -r '.assets[] | select(.name| test(".*.tar.xz$")).browser_download_url') && \
     mkdir -p /tmp/latencyflex && \
     tar --no-same-owner --no-same-permissions --no-overwrite-dir --strip-components 1 -xvf /tmp/latencyflex.tar.xz -C /tmp/latencyflex && \
     rm -f /tmp/latencyflex.tar.xz && \
-    cp -r /tmp/latencyflex/wine/usr/lib/wine/* /usr/lib64/wine/ && \
     rm -rf /tmp/latencyflex && \
     curl -Lo /usr/bin/latencyflex https://raw.githubusercontent.com/KyleGospo/LatencyFleX-Installer/main/install.sh && \
     chmod +x /usr/bin/latencyflex && \
-    sed -i 's@/usr/lib/wine/@/usr/lib64/wine/@g' /usr/bin/latencyflex && \
     sed -i 's@"dxvk.conf"@"/usr/share/latencyflex/dxvk.conf"@g' /usr/bin/latencyflex && \
     chmod +x /usr/bin/latencyflex && \
-    ostree container commit
-
-# Configure KDE & GNOME
-RUN if grep -q "kinoite" <<< "${BASE_IMAGE_NAME}"; then \
-        rpm-ostree install \
-            qt && \
-        rpm-ostree override remove \
-            plasma-welcome && \
-        rpm-ostree override replace \
-        --experimental \
-        --from repo=copr:copr.fedorainfracloud.org:ublue-os:staging \
-            kf6-kio-doc \
-            kf6-kio-widgets-libs \
-            kf6-kio-core-libs \
-            kf6-kio-widgets \
-            kf6-kio-file-widgets \
-            kf6-kio-core \
-            kf6-kio-gui && \
-        rpm-ostree install \
-            steamdeck-kde-presets-desktop \
-            kdeconnectd \
-            kdeplasma-addons \
-            rom-properties-kf6 \
-            joystickwake \
-            ptyxis && \
-        mkdir -p /tmp/kwin-system76-scheduler-integration && \
-        curl -Lo /tmp/kwin-system76-scheduler-integration/archive.tar.gz https://github.com/maxiberta/kwin-system76-scheduler-integration/archive/refs/heads/main.tar.gz && \
-        tar --no-same-owner --no-same-permissions --no-overwrite-dir --strip-components 1 -xvf /tmp/kwin-system76-scheduler-integration/archive.tar.gz -C /tmp/kwin-system76-scheduler-integration && \
-        kpackagetool6 --type=KWin/Script --global --install /tmp/kwin-system76-scheduler-integration && \
-        rm -rf /tmp/kwin-system76-scheduler-integration && \
-        sed -i '/<entry name="launchers" type="StringList">/,/<\/entry>/ s/<default>[^<]*<\/default>/<default>preferred:\/\/browser,applications:steam.desktop,applications:net.lutris.Lutris.desktop,applications:org.gnome.Ptyxis.desktop,applications:org.kde.discover.desktop,preferred:\/\/filemanager<\/default>/' /usr/share/plasma/plasmoids/org.kde.plasma.taskmanager/contents/config/main.xml && \
-        sed -i '/<entry name="favorites" type="StringList">/,/<\/entry>/ s/<default>[^<]*<\/default>/<default>preferred:\/\/browser,steam.desktop,net.lutris.Lutris.desktop,systemsettings.desktop,org.kde.dolphin.desktop,org.kde.kate.desktop,org.gnome.Ptyxis.desktop,org.kde.discover.desktop,system-update.desktop<\/default>/' /usr/share/plasma/plasmoids/org.kde.plasma.kickoff/contents/config/main.xml && \
-        sed -i 's@\[Desktop Action new-window\]@\[Desktop Action new-window\]\nX-KDE-Shortcuts=Ctrl+Alt+T@g' /usr/share/applications/org.gnome.Ptyxis.desktop && \
-        sed -i 's@Exec=ptyxis@Exec=kde-ptyxis@g' /usr/share/applications/org.gnome.Ptyxis.desktop && \
-        sed -i 's@Keywords=@Keywords=konsole;console;@g' /usr/share/applications/org.gnome.Ptyxis.desktop && \
-        cp /usr/share/applications/org.gnome.Ptyxis.desktop /usr/share/kglobalaccel/org.gnome.Ptyxis.desktop && \
-        sed -i 's@\[Desktop Entry\]@\[Desktop Entry\]\nNoDisplay=true@g' /usr/share/applications/org.kde.konsole.desktop && \
-        sed -i 's@\[Desktop Entry\]@\[Desktop Entry\]\nNoDisplay=true@g' /usr/share/applications/yad-icon-browser.desktop && \
-        rm -f /usr/share/kglobalaccel/org.kde.konsole.desktop && \
-        systemctl enable kde-sysmonitor-workaround.service \
-    ; else \
-        rpm-ostree override replace \
-        --experimental \
-        --from repo=copr:copr.fedorainfracloud.org:ublue-os:staging \
-            mutter \
-            mutter-common \
-            gnome-shell \
-            vte291 \
-            vte-profile && \
-        rpm-ostree install \
-            ptyxis \
-            nautilus-open-any-terminal \
-            nautilus-gsconnect \
-            steamdeck-backgrounds \
-            gnome-randr-rust \
-            gnome-shell-extension-user-theme \
-            gnome-shell-extension-gsconnect \
-            gnome-shell-extension-system76-scheduler \
-            gnome-shell-extension-compiz-windows-effect \
-            gnome-shell-extension-compiz-alike-magic-lamp-effect \
-            gnome-shell-extension-just-perfection \
-            gnome-shell-extension-blur-my-shell \
-            gnome-shell-extension-hanabi \
-            gnome-shell-extension-gamerzilla \
-            gnome-shell-extension-bazzite-menu \
-            gnome-shell-extension-hotedge \
-            gnome-shell-extension-caffeine \
-            gnome-shell-extension-power-profile-switcher \
-            rom-properties-gtk3 \
-            openssh-askpass && \
-        rpm-ostree override remove \
-            gnome-software-rpm-ostree \
-            gnome-classic-session \
-            gnome-classic-session-xsession \
-            gnome-tour \
-            gnome-extensions-app \
-            gnome-terminal-nautilus \
-            gnome-initial-setup && \
-        sed -i 's@\[Desktop Entry\]@\[Desktop Entry\]\nNoDisplay=true@g' /usr/share/applications/org.gnome.Terminal.desktop && \
-        sed -i 's@\[Desktop Entry\]@\[Desktop Entry\]\nNoDisplay=true@g' /usr/share/applications/org.gnome.SystemMonitor.desktop && \
-        systemctl enable dconf-update.service \
-    ; fi && \
     ostree container commit
 
 # Install Gamescope, ROCM, and Waydroid on non-Nvidia images
@@ -527,7 +380,6 @@ RUN rpm-ostree install \
         rocm-hip \
         rocm-opencl \
         rocm-clinfo \
-        waydroid \
         cage \
         wlr-randr && \
     sed -i~ -E 's/=.\$\(command -v (nft|ip6?tables-legacy).*/=/g' /usr/lib/waydroid/data/scripts/waydroid-net.sh && \
@@ -539,7 +391,6 @@ RUN /usr/libexec/containerbuild/build-initramfs && \
     /usr/libexec/containerbuild/image-info && \
     rm -f /etc/profile.d/toolbox.sh && \
     sed -i 's@/usr/bin/steam@/usr/bin/bazzite-steam@g' /usr/share/applications/steam.desktop && \
-    sed -i 's@\[Desktop Entry\]@\[Desktop Entry\]\nNoDisplay=true@g' /usr/share/applications/fish.desktop && \
     sed -i 's@\[Desktop Entry\]@\[Desktop Entry\]\nNoDisplay=true@g' /usr/share/applications/nvtop.desktop && \
     sed -i 's@\[Desktop Entry\]@\[Desktop Entry\]\nNoDisplay=true@g' /usr/share/applications/btop.desktop && \
     rm -f /usr/share/vulkan/icd.d/lvp_icd.*.json && \
@@ -550,7 +401,6 @@ RUN /usr/libexec/containerbuild/build-initramfs && \
     cp "/usr/share/applications/discover_overlay.desktop" "/usr/etc/xdg/autostart/discover_overlay.desktop" && \
     sed -i 's@Exec=discover-overlay@Exec=/usr/bin/bazzite-discover-overlay@g' /usr/etc/xdg/autostart/discover_overlay.desktop && \
     sed -i 's@\[Desktop Entry\]@\[Desktop Entry\]\nNoDisplay=true@g' /usr/share/applications/discover_overlay.desktop && \
-    cp "/usr/share/ublue-os/firstboot/yafti.yml" "/etc/yafti.yml" && \
     echo "import \"/usr/share/ublue-os/just/80-bazzite.just\"" >> /usr/share/ublue-os/justfile && \
     echo "import \"/usr/share/ublue-os/just/81-bazzite-fixes.just\"" >> /usr/share/ublue-os/justfile && \
     echo "import \"/usr/share/ublue-os/just/82-bazzite-apps.just\"" >> /usr/share/ublue-os/justfile && \
@@ -561,7 +411,6 @@ RUN /usr/libexec/containerbuild/build-initramfs && \
     echo "import \"/usr/share/ublue-os/just/84-bazzite-virt.just\"" >> /usr/share/ublue-os/justfile && \
     echo "import \"/usr/share/ublue-os/just/85-bazzite-image.just\"" >> /usr/share/ublue-os/justfile && \
     echo "import \"/usr/share/ublue-os/just/90-bazzite-de.just\"" >> /usr/share/ublue-os/justfile && \
-    pip install --prefix=/usr yafti && \
     sed -i 's/stage/none/g' /etc/rpm-ostreed.conf && \
     if [[ "${KERNEL_FLAVOR}" =~ "fsync" ]]; then \
         sed -i 's@enabled=1@enabled=0@g' /etc/yum.repos.d/_copr_sentry-kernel-fsync.repo \
@@ -591,18 +440,13 @@ RUN /usr/libexec/containerbuild/build-initramfs && \
     sed -i 's@enabled=1@enabled=0@g' /etc/yum.repos.d/rpmfusion-nonfree-updates-testing.repo && \
     sed -i 's/#DefaultTimeoutStopSec.*/DefaultTimeoutStopSec=15s/' /usr/lib/systemd/user.conf && \
     sed -i 's/#DefaultTimeoutStopSec.*/DefaultTimeoutStopSec=15s/' /usr/lib/systemd/system.conf && \
-    mkdir -p /usr/etc/flatpak/remotes.d && \
-    curl -Lo /usr/etc/flatpak/remotes.d/flathub.flatpakrepo https://dl.flathub.org/repo/flathub.flatpakrepo && \
     systemctl enable com.system76.Scheduler.service && \
     systemctl enable btrfs-dedup@var-home.timer && \
     systemctl enable displaylink.service && \
     systemctl enable input-remapper.service && \
-    systemctl unmask bazzite-flatpak-manager.service && \
-    systemctl enable bazzite-flatpak-manager.service && \
     systemctl disable rpm-ostreed-automatic.timer && \
     systemctl enable ublue-update.timer && \
     systemctl enable gamescope-workaround.service && \
-    systemctl enable waydroid-workaround.service && \
     systemctl enable incus-workaround.service && \
     systemctl enable bazzite-hardware-setup.service && \
     systemctl enable tailscaled.service && \
@@ -632,10 +476,10 @@ ARG IMAGE_VENDOR="${IMAGE_VENDOR:-ublue-os}"
 ARG IMAGE_FLAVOR="${IMAGE_FLAVOR:-main}"
 ARG KERNEL_FLAVOR="${KERNEL_FLAVOR:-fsync}"
 ARG IMAGE_BRANCH="${IMAGE_BRANCH:-main}"
-ARG BASE_IMAGE_NAME="${BASE_IMAGE_NAME:-kinoite}"
+ARG BASE_IMAGE_NAME="${BASE_IMAGE_NAME:-base}"
 ARG FEDORA_MAJOR_VERSION="${FEDORA_MAJOR_VERSION:-40}"
 
-COPY system_files/deck/shared system_files/deck/${BASE_IMAGE_NAME} /
+#COPY system_files/deck/shared system_files/deck/${BASE_IMAGE_NAME} /
 
 # Setup Copr repos
 RUN sed -i 's@enabled=0@enabled=1@g' /etc/yum.repos.d/_copr_ublue-os-akmods.repo && \
@@ -651,18 +495,8 @@ RUN sed -i 's@enabled=0@enabled=1@g' /etc/yum.repos.d/_copr_ublue-os-akmods.repo
 # Configure KDE & GNOME
 RUN rpm-ostree override remove \
         jupiter-sd-mounting-btrfs && \
-    if grep -q "kinoite" <<< "${BASE_IMAGE_NAME}"; then \
-        rpm-ostree override remove \
-            steamdeck-kde-presets-desktop && \
-        rpm-ostree install \
-            steamdeck-kde-presets \
-    ; else \
-        rpm-ostree install \
-            steamdeck-gnome-presets \
-            gnome-shell-extension-caribou-blocker \
-            sddm && \
-        curl -Lo /usr/etc/dxvk-example.conf https://raw.githubusercontent.com/doitsujin/dxvk/master/dxvk.conf \
-    ; fi && \
+	curl -Lo /usr/etc/dxvk-example.conf https://raw.githubusercontent.com/doitsujin/dxvk/master/dxvk.conf \
+    && \
     ostree container commit
 
 # Install new packages
@@ -732,7 +566,6 @@ RUN /usr/libexec/containerbuild/image-info && \
         rm -f /usr/share/applications/com.github.maliit.keyboard.desktop \
     ; fi && \
     sed -i 's@\[Desktop Entry\]@\[Desktop Entry\]\nNoDisplay=true@g' /usr/share/applications/input-remapper-gtk.desktop && \
-    cp "/usr/share/ublue-os/firstboot/yafti.yml" "/usr/etc/yafti.yml" && \
     sed -i 's/#HandlePowerKey=poweroff/HandlePowerKey=suspend/g' /usr/lib/systemd/logind.conf && \
     sed -i 's@enabled=1@enabled=0@g' /etc/yum.repos.d/_copr_ublue-os-akmods.repo && \
     sed -i 's@enabled=1@enabled=0@g' /etc/yum.repos.d/_copr_kylegospo-bazzite.repo && \
