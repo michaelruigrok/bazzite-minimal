@@ -607,14 +607,14 @@ RUN /usr/libexec/containerbuild/image-info && \
     systemctl disable batterylimit.service && \
     ostree container commit
 
-FROM bazzite as bazzite-nvidia
+FROM bazzite-deck as bazzite-nvidia
 
 ARG IMAGE_NAME="${IMAGE_NAME:-bazzite-nvidia}"
 ARG IMAGE_VENDOR="${IMAGE_VENDOR:-ublue-os}"
 ARG IMAGE_FLAVOR="${IMAGE_FLAVOR:-nvidia}"
 ARG KERNEL_FLAVOR="${KERNEL_FLAVOR:-fsync}"
 ARG IMAGE_BRANCH="${IMAGE_BRANCH:-main}"
-ARG BASE_IMAGE_NAME="${BASE_IMAGE_NAME:-kinoite}"
+ARG BASE_IMAGE_NAME="${BASE_IMAGE_NAME:-base}"
 ARG FEDORA_MAJOR_VERSION="${FEDORA_MAJOR_VERSION:-40}"
 
 # Fetch NVIDIA driver
