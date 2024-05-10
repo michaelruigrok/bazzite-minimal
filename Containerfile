@@ -17,7 +17,7 @@ ARG IMAGE_BRANCH="${IMAGE_BRANCH:-main}"
 ARG BASE_IMAGE_NAME="${BASE_IMAGE_NAME:-base}"
 ARG FEDORA_MAJOR_VERSION="${FEDORA_MAJOR_VERSION:-40}"
 
-COPY system_files/desktop/shared system_files/desktop/${BASE_IMAGE_NAME} /
+#COPY system_files/desktop/shared system_files/desktop/${BASE_IMAGE_NAME} /
 
 # Setup Copr repos
 RUN curl -Lo /usr/bin/copr https://raw.githubusercontent.com/ublue-os/COPR-command/main/copr && \
