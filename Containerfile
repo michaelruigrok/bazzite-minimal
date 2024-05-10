@@ -111,8 +111,8 @@ RUN mkdir -p /tmp/mediatek-firmware && \
     ostree container commit
 
 # Add ublue packages, add needed negativo17 repo and then immediately disable due to incompatibility with RPMFusion
-COPY --from=ghcr.io/ublue-os/akmods:${KERNEL_FLAVOR}-${FEDORA_MAJOR_VERSION} /rpms /tmp/akmods-rpms
-COPY --from=ghcr.io/ublue-os/akmods-extra:${KERNEL_FLAVOR}-${FEDORA_MAJOR_VERSION} /rpms /tmp/akmods-rpms
+COPY --from=ghcr.io/ublue-os/akmods:fsync-40 /rpms /tmp/akmods-rpms
+COPY --from=ghcr.io/ublue-os/akmods-extra:fsync-40 /rpms /tmp/akmods-rpms
 RUN sed -i 's@enabled=0@enabled=1@g' /etc/yum.repos.d/_copr_ublue-os-akmods.repo && \
     curl -Lo /etc/yum.repos.d/negativo17-fedora-multimedia.repo https://negativo17.org/repos/fedora-multimedia.repo && \
     rpm-ostree install \
@@ -307,8 +307,12 @@ RUN rpm-ostree install \
         cockpit-system \
         cockpit-navigator \
         cockpit-storaged \
-        lsb_release \
 		&& \
+	curl -s https://api.github.com/repos/topgrade-rs/topgrade/releases/latest \
+		| grep -o -m 1 'https:.*topgrade.*x86_64.*linux-gnu\.tar\.gz' \
+		| wget -qi - -O- | tar --directory=/usr/bin -xz && \
+	chmod +x /usr/bin/topgrade && \
+	lsb_release && \
     rpm-ostree install \
         ublue-update && \
     mkdir -p /usr/etc/xdg/autostart && \
@@ -327,11 +331,19 @@ RUN rpm-ostree install \
 # Install Steam & Lutris, plus supporting packages
 # Remove Feral gamemode, System76 Scheduler supersedes this
 RUN rpm-ostree install \
-        vulkan-loader.i686 \
+		gtk2.i686 \
+		libXext.i686 \
+		libXinerama.i686 \
+		libXtst.i686 \
+		libnsl.i686 \
+		libpng12.i686 \
+		libxcrypt-compat.i686 \
+		nss.i686 \
         NetworkManager-libnm.i686 \
-        libcurl.i686 \
         libatomic.i686 \
+        libcurl.i686 \
         pipewire-alsa.i686 \
+        vulkan-loader.i686 \
         && \
     sed -i '0,/enabled=1/s//enabled=0/' /etc/yum.repos.d/fedora-updates.repo && \
     rpm-ostree install \
@@ -360,7 +372,7 @@ RUN rpm-ostree install \
 		gamemode && \
 	rpm-ostree override remove \
 		gnome-shell-extension-gamemode \
-		|| true \
+		|| true && \
     curl -Lo /tmp/latencyflex.tar.xz $(curl https://api.github.com/repos/ishitatsuyuki/LatencyFleX/releases/latest | jq -r '.assets[] | select(.name| test(".*.tar.xz$")).browser_download_url') && \
     mkdir -p /tmp/latencyflex && \
     tar --no-same-owner --no-same-permissions --no-overwrite-dir --strip-components 1 -xvf /tmp/latencyflex.tar.xz -C /tmp/latencyflex && \
@@ -372,7 +384,7 @@ RUN rpm-ostree install \
     chmod +x /usr/bin/latencyflex && \
     ostree container commit
 
-# Install Gamescope, ROCM, and Waydroid on non-Nvidia images
+# Install Gamescope, ROCM on non-Nvidia images
 RUN rpm-ostree install \
         gamescope.x86_64 \
         gamescope-libs.i686 \
@@ -382,10 +394,10 @@ RUN rpm-ostree install \
         rocm-clinfo \
         cage \
         wlr-randr && \
-    sed -i~ -E 's/=.\$\(command -v (nft|ip6?tables-legacy).*/=/g' /usr/lib/waydroid/data/scripts/waydroid-net.sh && \
     ostree container commit
 
 # Cleanup & Finalize
+COPY system_files/desktop/shared system_files/desktop/${BASE_IMAGE_NAME}* /
 COPY system_files/overrides /
 RUN /usr/libexec/containerbuild/build-initramfs && \
     /usr/libexec/containerbuild/image-info && \
@@ -449,7 +461,6 @@ RUN /usr/libexec/containerbuild/build-initramfs && \
     systemctl enable gamescope-workaround.service && \
     systemctl enable incus-workaround.service && \
     systemctl enable bazzite-hardware-setup.service && \
-    systemctl enable tailscaled.service && \
     systemctl enable dev-hugepages1G.mount && \
     systemctl disable joycond.service && \
     systemctl --global enable bazzite-user-setup.service && \
@@ -460,13 +471,8 @@ RUN /usr/libexec/containerbuild/build-initramfs && \
         systemctl --global enable com.system76.Scheduler.dbusproxy.service \
     ; else \
         sed -i 's@\[Desktop Entry\]@\[Desktop Entry\]\nNoDisplay=true@g' /usr/share/applications/yad-icon-browser.desktop && \
-        sed -i 's@\[Desktop Entry\]@\[Desktop Entry\]\nNoDisplay=true@g' /usr/share/applications/com.github.rafostar.Clapper.desktop && \
         sed -i '/^PRETTY_NAME/s/Silverblue/Bazzite GNOME/' /usr/lib/os-release \
     ; fi && \
-    systemctl disable waydroid-container.service && \
-    sed -i 's@Exec=waydroid first-launch@Exec=/usr/bin/waydroid-launcher first-launch\nX-Steam-Library-Capsule=/usr/share/applications/Waydroid/capsule.png\nX-Steam-Library-Hero=/usr/share/applications/Waydroid/hero.png\nX-Steam-Library-Logo=/usr/share/applications/Waydroid/logo.png\nX-Steam-Library-StoreCapsule=/usr/share/applications/Waydroid/store-logo.png\nX-Steam-Controller-Template=Desktop@g' /usr/share/applications/Waydroid.desktop && \
-    curl -Lo /usr/bin/waydroid-choose-gpu https://raw.githubusercontent.com/KyleGospo/waydroid-scripts/main/waydroid-choose-gpu.sh && \
-    chmod +x /usr/bin/waydroid-choose-gpu && \
     ostree container commit
 
 FROM bazzite as bazzite-deck
@@ -479,7 +485,7 @@ ARG IMAGE_BRANCH="${IMAGE_BRANCH:-main}"
 ARG BASE_IMAGE_NAME="${BASE_IMAGE_NAME:-base}"
 ARG FEDORA_MAJOR_VERSION="${FEDORA_MAJOR_VERSION:-40}"
 
-#COPY system_files/deck/shared system_files/deck/${BASE_IMAGE_NAME} /
+COPY system_files/deck/shared system_files/deck/${BASE_IMAGE_NAME}* /
 
 # Setup Copr repos
 RUN sed -i 's@enabled=0@enabled=1@g' /etc/yum.repos.d/_copr_ublue-os-akmods.repo && \
@@ -494,7 +500,7 @@ RUN sed -i 's@enabled=0@enabled=1@g' /etc/yum.repos.d/_copr_ublue-os-akmods.repo
 
 # Configure KDE & GNOME
 RUN rpm-ostree override remove \
-        jupiter-sd-mounting-btrfs && \
+        jupiter-sd-mounting-btrfs || true && \
 	curl -Lo /usr/etc/dxvk-example.conf https://raw.githubusercontent.com/doitsujin/dxvk/master/dxvk.conf \
     && \
     ostree container commit
@@ -628,7 +634,7 @@ RUN rpm-ostree override remove \
     ostree container commit
 
 # Install NVIDIA driver
-COPY --from=ghcr.io/ublue-os/akmods-nvidia:${KERNEL_FLAVOR}-${FEDORA_MAJOR_VERSION} /rpms /tmp/akmods-rpms
+COPY --from=ghcr.io/ublue-os/akmods-nvidia:fsync-40 /rpms /tmp/akmods-rpms
 RUN sed -i 's@enabled=0@enabled=1@g' /etc/yum.repos.d/rpmfusion-nonfree.repo && \
     sed -i 's@enabled=0@enabled=1@g' /etc/yum.repos.d/rpmfusion-nonfree-updates.repo && \
     sed -i 's@enabled=0@enabled=1@g' /etc/yum.repos.d/rpmfusion-nonfree-updates-testing.repo && \
